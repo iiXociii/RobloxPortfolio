@@ -1,0 +1,95 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBXe671f50e292f425f96f0e56ae8ee44c7">
+		<Properties>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<string name="Name">AutoOrganizerPlugin</string>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{9dbeae46-4af9-40c7-9959-ca0acfc6bef7}</string>
+			<ProtectedString name="Source"><![CDATA[local toolbar = plugin:CreateToolbar("Auto Organizer")
+local organizeButton = toolbar:CreateButton("Organize", "Organize project structure", "")
+
+local servicesToOrganize = {
+	game:GetService("ServerScriptService"),
+	game:GetService("ReplicatedStorage"),
+	game:GetService("StarterGui")
+}
+
+local folderRules = {
+	Script = "Scripts",
+	LocalScript = "Scripts",
+	ModuleScript = "Modules",
+	ScreenGui = "UI",
+	SurfaceGui = "UI",
+	RemoteEvent = "Remotes",
+	RemoteFunction = "Remotes"
+}
+
+organizeButton.Click:Connect(function()
+	warn("Organizing project...")
+
+	local totalMoved = 0
+	local totalDeleted = 0
+
+	for _, service in ipairs(servicesToOrganize) do
+		local folderMap = {}
+
+		-- First pass: organize objects
+		for _, obj in ipairs(service:GetChildren()) do
+			local targetFolderName = folderRules[obj.ClassName]
+
+			if targetFolderName then
+				-- Create folder only if needed
+				if not folderMap[targetFolderName] then
+					local existing = service:FindFirstChild(targetFolderName)
+					if existing and existing:IsA("Folder") then
+						folderMap[targetFolderName] = existing
+					else
+						local folder = Instance.new("Folder")
+						folder.Name = targetFolderName
+						folder.Parent = service
+						folderMap[targetFolderName] = folder
+					end
+				end
+
+				if obj.Parent == service then
+					obj.Parent = folderMap[targetFolderName]
+					totalMoved += 1
+				end
+			end
+		end
+
+		-- Second pass: remove empty folders
+		for _, obj in ipairs(service:GetChildren()) do
+			if obj:IsA("Folder") and #obj:GetChildren() == 0 then
+				local isOrganizerFolder = false
+				for _, folder in pairs(folderMap) do
+					if obj == folder then
+						isOrganizerFolder = true
+						break
+					end
+				end
+				if not isOrganizerFolder then
+					obj:Destroy()
+					totalDeleted += 1
+				end
+			end
+		end
+	end
+
+	warn("✅ Organization complete.")
+	warn("🔧 Moved items: " .. totalMoved)
+	warn("🗑️  Empty folders deleted: " .. totalDeleted)
+end)
+
+-- Made by iiXociii]]></ProtectedString>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+	</Item>
+</roblox>
